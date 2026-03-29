@@ -1,5 +1,10 @@
 # Nextcloud Homelab Journey: WSL Prototype to Raspberry Pi + External HDD
 
+## 📊 Architecture Diagram
+
+See full diagram here:
+[Architecture Diagram](./architecture/diagram.md)
+
 ## Project Overview
 
 This project documents my self-hosted cloud storage journey using Ubuntu on WSL, Docker, Cloudflare Tunnel, and a planned migration to Raspberry Pi with external HDD for a cleaner production-style setup.
