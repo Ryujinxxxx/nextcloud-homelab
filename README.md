@@ -1,9 +1,13 @@
 # Nextcloud Homelab Journey: WSL Prototype to Raspberry Pi + External HDD
 
-## 📊 Architecture Diagram
+## 📊 Architecture
 
-See full diagram here:
-[Architecture Diagram](./architecture/diagram.md)
+This project includes two architecture views:
+
+- [Interactive HTML Diagram](./architecture/interactive-diagram.html)
+- [GitHub Mermaid Diagram](./architecture/diagram.md)
+
+The HTML version is more polished and clickable. The Mermaid version renders directly in GitHub.
 
 ## Project Overview
 

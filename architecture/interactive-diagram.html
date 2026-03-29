@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nextcloud Homelab Architecture</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#121a31;
+      --panel-2:#182342;
+      --text:#e9eefb;
+      --muted:#a7b3d1;
+      --line:#4f6db8;
+      --accent:#6aa3ff;
+      --good:#59d19a;
+      --warn:#f0c15d;
+      --pink:#d985ff;
+      --shadow:0 18px 40px rgba(0,0,0,.28);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(106,163,255,.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(217,133,255,.12), transparent 24%),
+        linear-gradient(180deg, #0a0f1d 0%, #10172d 100%);
+      min-height:100vh;
+    }
+    .wrap{
+      max-width:1400px;
+      margin:0 auto;
+      padding:32px 24px 48px;
+    }
+    .hero{
+      display:flex;
+      justify-content:space-between;
+      gap:20px;
+      align-items:flex-start;
+      margin-bottom:28px;
+      flex-wrap:wrap;
+    }
+    .hero h1{
+      margin:0 0 8px;
+      font-size:clamp(28px,4vw,44px);
+      line-height:1.05;
+    }
+    .hero p{
+      margin:0;
+      color:var(--muted);
+      font-size:16px;
+      max-width:760px;
+    }
+    .legend{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .tag{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--text);
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.6fr .9fr;
+      gap:22px;
+    }
+    @media (max-width: 1100px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card-head{
+      padding:18px 20px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .card-head h2{
+      margin:0;
+      font-size:20px;
+    }
+    .card-head .small{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .diagram{
+      padding:16px;
+      overflow:auto;
+    }
+    svg{width:100%; height:auto; min-height:760px}
+    .node{cursor:pointer; transition:transform .18s ease}
+    .node:hover{transform:translateY(-2px)}
+    .node rect{
+      stroke:rgba(255,255,255,.14);
+      stroke-width:1.2;
+      filter: drop-shadow(0 10px 16px rgba(0,0,0,.18));
+    }
+    .lbl-title{
+      font-size:17px;
+      font-weight:700;
+      fill:#f6f8ff;
+    }
+    .lbl-sub{
+      font-size:12px;
+      fill:#b8c3df;
+    }
+    .icon-circle{
+      stroke:rgba(255,255,255,.14);
+      stroke-width:1.2;
+    }
+    .line{
+      stroke:var(--line);
+      stroke-width:3;
+      fill:none;
+      marker-end:url(#arrow);
+      opacity:.95;
+    }
+    .line.soft{stroke:#7997de; opacity:.7}
+    .line.dashed{stroke-dasharray:8 8}
+    .side{
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .panel{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:16px;
+    }
+    .panel h3{
+      margin:0 0 8px;
+      font-size:16px;
+    }
+    .panel p, .panel li{
+      color:var(--muted);
+      line-height:1.55;
+      font-size:14px;
+    }
+    .panel ul{margin:8px 0 0 18px; padding:0}
+    .detail{
+      min-height:210px;
+    }
+    .detail-title{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(106,163,255,.14);
+      color:#cfe0ff;
+      font-size:12px;
+      border:1px solid rgba(106,163,255,.24);
+    }
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+    }
+    .kpi{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:12px;
+    }
+    .kpi strong{
+      display:block;
+      font-size:20px;
+      margin-bottom:2px;
+    }
+    .kpi span{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .footer-note{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:8px;
+    }
+    .logo{
+      font-weight:800;
+      letter-spacing:.3px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .logo-mark{
+      width:14px; height:14px; border-radius:4px;
+      background:linear-gradient(135deg, var(--accent), var(--pink));
+      box-shadow:0 0 0 4px rgba(106,163,255,.12);
+    }
+    code{
+      background:rgba(255,255,255,.06);
+      padding:2px 6px;
+      border-radius:8px;
+      color:#f5f8ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="logo"><span class="logo-mark"></span><span>Nextcloud Homelab Architecture</span></div>
+        <h1>WSL Prototype → Raspberry Pi + External HDD</h1>
+        <p>
+          Interactive architecture for a self-hosted Nextcloud platform. Click any component to inspect its role,
+          risks, and production direction. Designed for GitHub portfolio use and migration planning.
+        </p>
+        <div class="legend">
+          <div class="tag">Current: WSL prototype</div>
+          <div class="tag">Target: Raspberry Pi production</div>
+          <div class="tag">Storage: External HDD</div>
+          <div class="tag">Access: Cloudflare Tunnel</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>Interactive System Diagram</h2>
+            <div class="small">Click any block to open details on the right.</div>
+          </div>
+          <div class="small">Portfolio focus: Linux · Docker · Storage · Tunnel Security</div>
+        </div>
+        <div class="diagram">
+          <svg viewBox="0 0 980 760" xmlns="http://www.w3.org/2000/svg" aria-label="Nextcloud architecture diagram">
+            <defs>
+              <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                <path d="M0,0 L12,6 L0,12 z" fill="#6f8ed8"/>
+              </marker>
+            </defs>
+
+            <!-- lines -->
+            <path class="line" d="M140 120 C230 120, 240 120, 320 120"/>
+            <path class="line" d="M460 120 C540 120, 550 120, 630 120"/>
+            <path class="line" d="M770 120 C840 120, 840 240, 840 300"/>
+            <path class="line" d="M840 360 C840 430, 840 470, 840 540"/>
+            <path class="line soft" d="M630 120 C650 230, 700 240, 740 300"/>
+            <path class="line dashed" d="M840 600 C840 655, 700 655, 610 655"/>
+            <path class="line dashed" d="M840 600 C840 675, 915 675, 940 675"/>
+            <path class="line dashed" d="M620 320 C620 420, 615 470, 615 540"/>
+
+            <!-- nodes -->
+            <g class="node" data-key="user">
+              <rect x="40" y="78" rx="20" ry="20" width="180" height="84" fill="#182342"/>
+              <circle class="icon-circle" cx="82" cy="120" r="24" fill="#d985ff"/>
+              <text x="82" y="126" text-anchor="middle" font-size="20">👤</text>
+              <text class="lbl-title" x="120" y="112">User Device</text>
+              <text class="lbl-sub" x="120" y="132">Laptop / Mobile / Browser</text>
+            </g>
+
+            <g class="node" data-key="cloudflare">
+              <rect x="320" y="78" rx="20" ry="20" width="170" height="84" fill="#1d294c"/>
+              <circle class="icon-circle" cx="362" cy="120" r="24" fill="#f0c15d"/>
+              <text x="362" y="126" text-anchor="middle" font-size="20">☁️</text>
+              <text class="lbl-title" x="400" y="112">Cloudflare</text>
+              <text class="lbl-sub" x="400" y="132">Tunnel + HTTPS Access</text>
+            </g>
+
+            <g class="node" data-key="raspberry">
+              <rect x="630" y="78" rx="20" ry="20" width="170" height="84" fill="#1b2d4a"/>
+              <circle class="icon-circle" cx="672" cy="120" r="24" fill="#59d19a"/>
+              <text x="672" y="126" text-anchor="middle" font-size="20">🖥️</text>
+              <text class="lbl-title" x="710" y="112">Raspberry Pi</text>
+              <text class="lbl-sub" x="710" y="132">Linux Host</text>
+            </g>
+
+            <g class="node" data-key="docker">
+              <rect x="740" y="300" rx="20" ry="20" width="200" height="84" fill="#192742"/>
+              <circle class="icon-circle" cx="782" cy="342" r="24" fill="#6aa3ff"/>
+              <text x="782" y="348" text-anchor="middle" font-size="20">🐳</text>
+              <text class="lbl-title" x="820" y="334">Docker Engine</text>
+              <text class="lbl-sub" x="820" y="354">Container Runtime</text>
+            </g>
+
+            <g class="node" data-key="nextcloud">
+              <rect x="510" y="540" rx="20" ry="20" width="210" height="84" fill="#1d2442"/>
+              <circle class="icon-circle" cx="552" cy="582" r="24" fill="#6aa3ff"/>
+              <text x="552" y="588" text-anchor="middle" font-size="20">🗂️</text>
+              <text class="lbl-title" x="590" y="574">Nextcloud Container</text>
+              <text class="lbl-sub" x="590" y="594">App / Web UI / Sync</text>
+            </g>
+
+            <g class="node" data-key="db">
+              <rect x="740" y="540" rx="20" ry="20" width="200" height="84" fill="#20254a"/>
+              <circle class="icon-circle" cx="782" cy="582" r="24" fill="#d985ff"/>
+              <text x="782" y="588" text-anchor="middle" font-size="20">🛢️</text>
+              <text class="lbl-title" x="820" y="574">MariaDB</text>
+              <text class="lbl-sub" x="820" y="594">App Metadata Database</text>
+            </g>
+
+            <g class="node" data-key="hdd">
+              <rect x="350" y="632" rx="20" ry="20" width="230" height="84" fill="#17312d"/>
+              <circle class="icon-circle" cx="392" cy="674" r="24" fill="#59d19a"/>
+              <text x="392" y="680" text-anchor="middle" font-size="20">💾</text>
+              <text class="lbl-title" x="430" y="666">External HDD</text>
+              <text class="lbl-sub" x="430" y="686">/mnt/nextcloud-data</text>
+            </g>
+
+            <g class="node" data-key="backup">
+              <rect x="740" y="632" rx="20" ry="20" width="200" height="84" fill="#2d2a18"/>
+              <circle class="icon-circle" cx="782" cy="674" r="24" fill="#f0c15d"/>
+              <text x="782" y="680" text-anchor="middle" font-size="20">🛡️</text>
+              <text class="lbl-title" x="820" y="666">Backup Target</text>
+              <text class="lbl-sub" x="820" y="686">S3 / Secondary Disk</text>
+            </g>
+
+            <!-- current state note -->
+            <g class="node" data-key="wsl">
+              <rect x="60" y="300" rx="20" ry="20" width="250" height="108" fill="#251f45"/>
+              <circle class="icon-circle" cx="102" cy="354" r="24" fill="#d985ff"/>
+              <text x="102" y="360" text-anchor="middle" font-size="20">🧪</text>
+              <text class="lbl-title" x="140" y="344">WSL Prototype</text>
+              <text class="lbl-sub" x="140" y="364">Learning / testing environment</text>
+              <text class="lbl-sub" x="140" y="382">Not ideal for production storage</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel detail">
+          <div class="detail-title">
+            <h3 id="detail-name">Select a component</h3>
+            <span class="badge" id="detail-stage">Overview</span>
+          </div>
+          <p id="detail-summary">Click a block in the diagram to see what it does, why it matters, and how it fits your migration plan.</p>
+          <ul id="detail-points">
+            <li>Interactive portfolio-friendly architecture</li>
+            <li>Shows current-state and target-state design</li>
+            <li>Good for GitHub, interviews, and documentation</li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h3>Architecture highlights</h3>
+          <div class="kpis">
+            <div class="kpi"><strong>2</strong><span>Deployment stages</span></div>
+            <div class="kpi"><strong>3</strong><span>Core services</span></div>
+            <div class="kpi"><strong>1</strong><span>Persistent HDD path</span></div>
+          </div>
+          <div class="footer-note">Recommended persistent mount: <code>/mnt/nextcloud-data</code></div>
+        </section>
+
+        <section class="panel">
+          <h3>Why this looks professional</h3>
+          <ul>
+            <li>Separates prototype architecture from production design</li>
+            <li>Shows security, storage, compute, and backup layers clearly</li>
+            <li>Demonstrates infrastructure decision-making, not only installation steps</li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h3>GitHub usage</h3>
+          <p>
+            Put this file under <code>architecture/interactive-diagram.html</code> and link it from your README.
+            GitHub will not render the HTML preview inline, but users can open the file and download it. For inline repo viewing,
+            also keep a Mermaid markdown version.
+          </p>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const details = {
+      user: {
+        name: "User Device",
+        stage: "Access Layer",
+        summary: "The end user accesses Nextcloud through a browser or client app. This is the entry point for file uploads, downloads, and collaboration.",
+        points: [
+          "Represents laptops, phones, and desktop sync clients",
+          "Consumes secure access via Cloudflare Tunnel",
+          "No direct exposure to the home network is required"
+        ]
+      },
+      cloudflare: {
+        name: "Cloudflare Tunnel",
+        stage: "Security / Networking",
+        summary: "Cloudflare Tunnel provides secure remote access without opening inbound ports on the router. It gives you a cleaner and safer homelab edge.",
+        points: [
+          "Provides HTTPS access through your domain",
+          "Removes the need for traditional port forwarding",
+          "Good portfolio signal for zero-trust style access"
+        ]
+      },
+      raspberry: {
+        name: "Raspberry Pi Host",
+        stage: "Compute Layer",
+        summary: "This is the target production host. It runs Linux and provides the base platform for Docker, service management, and storage mounting.",
+        points: [
+          "Better fit than WSL for always-on workloads",
+          "Lets you control real Linux mounts and permissions",
+          "Supports cleaner HDD-only data placement"
+        ]
+      },
+      docker: {
+        name: "Docker Engine",
+        stage: "Runtime Layer",
+        summary: "Docker keeps the application stack portable and reproducible. It separates service packaging from the host OS and simplifies deployment.",
+        points: [
+          "Runs Nextcloud and MariaDB as separate services",
+          "Makes migration and rebuilds easier",
+          "Supports cleaner documentation with docker-compose"
+        ]
+      },
+      nextcloud: {
+        name: "Nextcloud Container",
+        stage: "Application Layer",
+        summary: "This is the main file platform. It handles the web interface, sync clients, sharing, and user-facing cloud storage features.",
+        points: [
+          "Stores user data on the external HDD mount",
+          "Connects to MariaDB for metadata and configuration",
+          "Main service to expose through the tunnel"
+        ]
+      },
+      db: {
+        name: "MariaDB Container",
+        stage: "Database Layer",
+        summary: "MariaDB stores application metadata, user settings, app configuration, and database-backed state for the platform.",
+        points: [
+          "Should persist in a dedicated Docker volume",
+          "Separate from the file data path",
+          "Critical for backup and recovery planning"
+        ]
+      },
+      hdd: {
+        name: "External HDD",
+        stage: "Persistent Storage",
+        summary: "The HDD is the key architectural choice. It stores the real user files and keeps persistent data separate from the Pi system disk or SSD.",
+        points: [
+          "Recommended mount: /mnt/nextcloud-data",
+          "Use ext4 and auto-mount with /etc/fstab",
+          "This is the main reason for migrating away from WSL"
+        ]
+      },
+      backup: {
+        name: "Backup Target",
+        stage: "Resilience Layer",
+        summary: "Backups protect against disk failure, misconfiguration, and accidental deletion. A secondary disk or cloud object storage makes the homelab production-minded.",
+        points: [
+          "Can use S3, rsync, or a second HDD",
+          "Important for recovery documentation",
+          "Good next step after base deployment"
+        ]
+      },
+      wsl: {
+        name: "WSL Prototype",
+        stage: "Current State",
+        summary: "WSL was useful as a learning and testing platform, but it is not ideal for enforcing a real HDD-only architecture or stable always-on hosting.",
+        points: [
+          "Good for Docker practice and early architecture validation",
+          "Not ideal for physical storage control",
+          "This project shows good judgment by migrating beyond it"
+        ]
+      }
+    };
+
+    document.querySelectorAll('.node').forEach(node => {
+      node.addEventListener('click', () => {
+        const data = details[node.dataset.key];
+        document.getElementById('detail-name').textContent = data.name;
+        document.getElementById('detail-stage').textContent = data.stage;
+        document.getElementById('detail-summary').textContent = data.summary;
+        const ul = document.getElementById('detail-points');
+        ul.innerHTML = '';
+        data.points.forEach(p => {
+          const li = document.createElement('li');
+          li.textContent = p;
+          ul.appendChild(li);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
