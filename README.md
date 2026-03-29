@@ -12,6 +12,12 @@ This project includes two architecture views:
 
 The HTML version is more polished and clickable. The Mermaid version renders directly in GitHub.
 
+## 📸 Project Interface (WSL Prototype)
+
+Below shows the Nextcloud dashboard successfully running in my development environment (WSL):
+
+![Nextcloud Dashboard](./docs/images/nextcloud-dashboard.png)
+
 ## Project Overview
 
 This project documents my self-hosted cloud storage journey using Ubuntu on WSL, Docker, Cloudflare Tunnel, and a planned migration to Raspberry Pi with external HDD for a cleaner production-style setup.
