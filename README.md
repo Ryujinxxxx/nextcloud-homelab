@@ -7,6 +7,9 @@ This project includes two architecture views:
 - [Interactive HTML Diagram](./architecture/interactive-diagram.html)
 - [GitHub Mermaid Diagram](./architecture/diagram.md)
 
+<img width="795" height="587" alt="image" src="https://github.com/user-attachments/assets/5ac4b61c-78a5-47f8-9277-41c18d7cd9c3" />
+
+
 The HTML version is more polished and clickable. The Mermaid version renders directly in GitHub.
 
 ## Project Overview
